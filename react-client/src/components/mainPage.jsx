@@ -4,7 +4,7 @@ import Chats from "./chats";
 
 import React, { Component } from 'react';
 class MainPage extends Component {
-  state = { users: [], user: {}, selectedUser: {}, usernameAlreadySelected: false }
+  state = { users: [], user: {}, selectedUser: {}, usernameAlreadySelected: false, messages: [] }
 
   //handele socket.on event 
   componentDidMount() {
@@ -32,7 +32,7 @@ class MainPage extends Component {
     };
 
     socket.on("users", (users) => {
-      console.log("users",users);
+      console.log("users", users);
       users.forEach((user) => {
         user.self = user.userID === socket.id;
         initReactiveProperties(user);
@@ -49,13 +49,13 @@ class MainPage extends Component {
 
     socket.on("user connected", (user) => {
       initReactiveProperties(user);
-      const {users}=this.state
+      const { users } = this.state
       users.push(user);
-      this.setState({users})
+      this.setState({ users })
     });
 
     socket.on("user disconnected", (id) => {
-      const {users}=this.state
+      const { users } = this.state
 
       for (let i = 0; i < users.length; i++) {
         const user = this.state.users[i];
@@ -64,13 +64,16 @@ class MainPage extends Component {
           break;
         }
       }
-      this.setState({users})
+      this.setState({ users })
     });
 
     socket.on("private message", ({ content, from }) => {
-      for (let i = 0; i < this.state.users.length; i++) {
-        const user = this.state.users[i];
+      const { users, messages } = this.state
+      debugger
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
         if (user.userID === from) {
+          messages.push({ ...user, message:content })
           user.messages.push({
             content,
             fromSelf: false,
@@ -81,6 +84,7 @@ class MainPage extends Component {
           break;
         }
       }
+      this.setState({ messages, users })
     });
 
   }
@@ -138,7 +142,7 @@ class MainPage extends Component {
         {this.state.users.map(user => {
           return <User user={user} key={user.userID} onSelectUser={this.onSelectUser} />
         })}
-        <Chats users={this.state.users} />
+        <Chats messages={this.state.messages} />
         <h4>chat message</h4>
         <input type="text" name="username" placeholder="user name" onChange={this.handleChange} />
         <input type="text" name="password" placeholder="password" onChange={this.handleChange} />
