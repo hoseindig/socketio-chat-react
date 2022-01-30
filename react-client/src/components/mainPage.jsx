@@ -32,6 +32,7 @@ class MainPage extends Component {
     };
 
     socket.on("users", (users) => {
+      console.log("users",users);
       users.forEach((user) => {
         user.self = user.userID === socket.id;
         initReactiveProperties(user);
@@ -48,17 +49,22 @@ class MainPage extends Component {
 
     socket.on("user connected", (user) => {
       initReactiveProperties(user);
-      this.state.users.push(user);
+      const {users}=this.state
+      users.push(user);
+      this.setState({users})
     });
 
     socket.on("user disconnected", (id) => {
-      for (let i = 0; i < this.state.users.length; i++) {
+      const {users}=this.state
+
+      for (let i = 0; i < users.length; i++) {
         const user = this.state.users[i];
         if (user.userID === id) {
           user.connected = false;
           break;
         }
       }
+      this.setState({users})
     });
 
     socket.on("private message", ({ content, from }) => {
@@ -110,10 +116,11 @@ class MainPage extends Component {
     this.setState({ selectedUser })
   }
 
-  onUsernameSelection = (username) => {
+  onUsernameSelection = (username, password, ptype) => {
     console.log("onUsernameSelection username", username);
     this.setState({ usernameAlreadySelected: true })
-    socket.auth = { username };
+    const type = ptype ? ptype : 1
+    socket.auth = { username, password, type };
     socket.connect();
   }
 
@@ -126,15 +133,17 @@ class MainPage extends Component {
     // const { users, user } = this.state;
     return (
       <div>
-        <h1>main page</h1>
+        {/* <h1>main page</h1> */}
         <h4>User List # {this.state.users.length}</h4>
         {this.state.users.map(user => {
           return <User user={user} key={user.userID} onSelectUser={this.onSelectUser} />
         })}
         <Chats users={this.state.users} />
-        <h1>chat message</h1>
+        <h4>chat message</h4>
         <input type="text" name="username" placeholder="user name" onChange={this.handleChange} />
+        <input type="text" name="password" placeholder="password" onChange={this.handleChange} />
         <button onClick={() => this.onUsernameSelection(this.state.user.username)}>register</button>
+        <button onClick={() => this.onUsernameSelection(this.state.user.username, this.state.user.password, 2)}>register as Admin</button>
         <br />
         <input type="text" name="message" placeholder="message" onChange={this.handleChange} />
         <button onClick={() => this.onMessage(this.state.user.message)}>send</button>
